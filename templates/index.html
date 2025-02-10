@@ -1,0 +1,39 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">AI Software Engineer</h1>
+
+<div class="card mb-4">
+    <div class="card-header">Model Configuration</div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Select AI Model:</label>
+                <select name="model_type" class="form-select">
+                    <option value="OpenAI">OpenAI ChatGPT</option>
+                    <option value="Deepseek">DeepSeek Local</option>
+                    <option value="Claude">Claude</option>
+                    <option value="Llama">Llama 2</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Configure Model</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Problem Solver</div>
+    <div class="card-body">
+        <form method="POST" action="/solve">
+            <div class="mb-3">
+                <label class="form-label">Enter Problem:</label>
+                <textarea name="problem" class="form-control" rows="4"
+                    placeholder="Describe your software engineering problem"></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Solve Problem</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+<!-- templates/results.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Solution Results</h1>
+
+<div class="card mb-4">
+    <div class="card-header">Solution Code</div>
+    <div class="card-body">
+        <pre><code class="language-python">{{ result.solution }}</code></pre>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header {% if result.success %}bg-success{% else %}bg-danger{% endif %} text-white">
+        Verification Status
+    </div>
+    <div class="card-body">
+        {% if result.success %}
+        <p class="text-success">All tests passed successfully!</p>
+        {% else %}
+        <pre>{{ result.verification_result|tojson(indent=2) }}</pre>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">Reflections</div>
+    <div class="card-body">
+        <ul class="list-group">
+            {% for reflection in result.reflections %}
+            <li class="list-group-item">{{ reflection }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<a href="/" class="btn btn-primary">Back to Problem Solver</a>
+{% endblock %}

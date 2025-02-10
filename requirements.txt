@@ -1,0 +1,7 @@
+# requirements.txt
+flask
+python-dotenv
+openai
+requests
+llama-cpp-python==0.2.26
+gunicorn
