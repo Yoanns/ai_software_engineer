@@ -7,33 +7,102 @@
 <div class="card mb-4">
     <div class="card-header">Model Configuration</div>
     <div class="card-body">
-        <form method="POST">
+        <form id="modelForm" method="POST" action="/configure-model">
             <div class="mb-3">
                 <label class="form-label">Select AI Model:</label>
-                <select name="model_type" class="form-select">
-                    <option value="OpenAI">OpenAI ChatGPT</option>
-                    <option value="Deepseek">DeepSeek Local</option>
-                    <option value="Claude">Claude</option>
-                    <option value="Llama">Llama 2</option>
-                </select>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="model_type" id="openai" value="OpenAI" {% if
+                        session.model=='OpenAI' %}checked{% endif %}>
+                    <label class="form-check-label" for="openai">
+                        OpenAI ChatGPT
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="model_type" id="deepseek" value="Deepseek" {% if
+                        session.model=='Deepseek' %}checked{% endif %}>
+                    <label class="form-check-label" for="deepseek">
+                        DeepSeek Local
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="model_type" id="claude" value="Claude" {% if
+                        session.model=='Claude' %}checked{% endif %}>
+                    <label class="form-check-label" for="claude">
+                        Claude
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="model_type" id="llama" value="Llama" {% if
+                        session.model=='Llama' %}checked{% endif %}>
+                    <label class="form-check-label" for="llama">
+                        Llama 3.3
+                    </label>
+                </div>
             </div>
-
-            <button type="submit" class="btn btn-primary">Configure Model</button>
         </form>
     </div>
 </div>
 
-<div class="card">
+<div class="card mb-4">
     <div class="card-header">Problem Solver</div>
     <div class="card-body">
-        <form method="POST" action="/solve">
+        <form id="solveForm" method="POST" action="/solve">
             <div class="mb-3">
                 <label class="form-label">Enter Problem:</label>
                 <textarea name="problem" class="form-control" rows="4"
-                    placeholder="Describe your software engineering problem"></textarea>
+                    placeholder="Describe your software engineering problem" {% if not session.model %}disabled{% endif
+                    %}></textarea>
             </div>
-            <button type="submit" class="btn btn-success">Solve Problem</button>
+            <button type="submit" class="btn btn-success" {% if not session.model %}disabled{% endif %}>
+                Solve Problem
+            </button>
         </form>
     </div>
 </div>
+
+<div id="loading" class="card mb-4" style="display: none;">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="ms-3">
+                <h5 class="mb-0">Processing Problem...</h5>
+                <p class="mb-0">Current step: <span id="step">Initializing</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input[name="model_type"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('modelForm').submit();
+        });
+    });
+
+    document.getElementById('solveForm').addEventListener('submit', function (e) {
+        const loading = document.getElementById('loading');
+        const button = document.querySelector('#solveForm button[type="submit"]');
+
+        loading.style.display = 'block';
+        button.disabled = true;
+
+        const eventSource = new EventSource('/progress');
+
+        eventSource.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            document.getElementById('step').textContent = data.step;
+
+            if (data.complete) {
+                eventSource.close();
+                window.location.href = '/';  // Redirect to clear form
+            }
+        };
+
+        // Prevent double submission
+        e.preventDefault();
+        this.submit();
+    });
+</script>
 {% endblock %}

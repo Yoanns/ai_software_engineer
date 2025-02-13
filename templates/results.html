@@ -6,8 +6,9 @@
 
 <div class="card mb-4">
     <div class="card-header">Solution Code</div>
-    <div class="card-body">
-        <pre><code class="language-python">{{ result.solution }}</code></pre>
+    <div class="card-body position-relative">
+        <button class="btn btn-sm btn-secondary copy-btn position-absolute" style="top: 10px; right: 10px;">Copy</button>
+        <pre><code class="language-python" id="code-block">{{ result.solution }}</code></pre>
     </div>
 </div>
 
@@ -37,3 +38,18 @@
 
 <a href="/" class="btn btn-primary">Back to Problem Solver</a>
 {% endblock %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const copyBtn = document.querySelector('.copy-btn');
+        copyBtn.addEventListener('click', function () {
+            const codeText = document.getElementById('code-block').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                copyBtn.textContent = "Copied!";
+                setTimeout(() => copyBtn.textContent = "Copy", 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
+    });
+</script>

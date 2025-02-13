@@ -11,4 +11,12 @@ services:
       - .:/app
       - ./models:/app/models
       - ./logs:/app/logs
+    command: [
+      "gunicorn",
+      "--bind", "0.0.0.0:5000",
+      "--timeout", "600",
+      "--worker-class", "gevent",
+      "--workers", "1",
+      "app:app"
+    ]
     restart: unless-stopped
