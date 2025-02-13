@@ -1,7 +1,8 @@
 # requirements.txt
-flask
-python-dotenv
-openai
-requests
-llama-cpp-python==0.2.26
-gunicorn
+llama-cpp-python==0.2.27
+flask>=2.0.1
+python-dotenv>=0.19.0
+openai>=1.0.0
+requests>=2.26.0
+gunicorn>=20.1.0
+gevent>=23.9.1
