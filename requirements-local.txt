@@ -1,0 +1,3 @@
+# Optional: only needed for local GGUF inference. May require a C/C++ compiler.
+-r requirements.txt
+llama-cpp-python==0.3.36
