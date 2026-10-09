@@ -1,22 +1,19 @@
-version: '3.8'
-
 services:
   ai-engineer:
-    build: .
+    build:
+      context: .
+      args:
+        INSTALL_LOCAL_MODELS: ${INSTALL_LOCAL_MODELS:-false}
     ports:
-      - "5001:5000"
+      - "127.0.0.1:5001:5000"
     env_file:
       - .env
+    environment:
+      MEMORY_DB_PATH: /app/data/memory.db
     volumes:
-      - .:/app
-      - ./models:/app/models
-      - ./logs:/app/logs
-    command: [
-      "gunicorn",
-      "--bind", "0.0.0.0:5000",
-      "--timeout", "600",
-      "--worker-class", "gevent",
-      "--workers", "1",
-      "app:app"
-    ]
+      - ai-engineer-data:/app/data
+      - ./models:/app/models:ro
     restart: unless-stopped
+
+volumes:
+  ai-engineer-data:

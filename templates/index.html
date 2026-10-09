@@ -1,108 +1,90 @@
-<!-- templates/index.html -->
 {% extends "base.html" %}
-
 {% block content %}
 <h1 class="mb-4">AI Software Engineer</h1>
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
 
-<div class="card mb-4">
-    <div class="card-header">Model Configuration</div>
+<section class="card mb-4" aria-labelledby="model-heading">
+    <h2 class="card-header h5" id="model-heading">Model Configuration</h2>
     <div class="card-body">
-        <form id="modelForm" method="POST" action="/configure-model">
-            <div class="mb-3">
-                <label class="form-label">Select AI Model:</label>
+        <form id="modelForm" method="POST" action="{{ url_for('configure_model') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <fieldset class="mb-3">
+                <legend class="fs-6">Select AI model:</legend>
+                {% for provider, label in provider_labels.items() %}
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="model_type" id="openai" value="OpenAI" {% if
-                        session.model=='OpenAI' %}checked{% endif %}>
-                    <label class="form-check-label" for="openai">
-                        OpenAI ChatGPT
-                    </label>
+                    <input class="form-check-input" type="radio" name="model_type"
+                        id="model-{{ provider }}" value="{{ provider }}" required
+                        {% if session.get('model') == provider %}checked{% endif %}>
+                    <label class="form-check-label py-1" for="model-{{ provider }}">{{ label }}</label>
                 </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="model_type" id="deepseek" value="Deepseek" {% if
-                        session.model=='Deepseek' %}checked{% endif %}>
-                    <label class="form-check-label" for="deepseek">
-                        DeepSeek Local
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="model_type" id="claude" value="Claude" {% if
-                        session.model=='Claude' %}checked{% endif %}>
-                    <label class="form-check-label" for="claude">
-                        Claude
-                    </label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="model_type" id="llama" value="Llama" {% if
-                        session.model=='Llama' %}checked{% endif %}>
-                    <label class="form-check-label" for="llama">
-                        Llama 3.3
-                    </label>
-                </div>
-            </div>
+                {% endfor %}
+            </fieldset>
+            <button type="submit" class="btn btn-outline-primary">Save model</button>
+            {% if session.get('model') %}
+            <p class="text-success mt-3 mb-0">Selected: {{ provider_labels[session.model] }}.
+                Credentials are checked when you submit a problem.</p>
+            {% endif %}
         </form>
     </div>
-</div>
+</section>
 
-<div class="card mb-4">
-    <div class="card-header">Problem Solver</div>
+<section class="card mb-4" aria-labelledby="problem-heading">
+    <h2 class="card-header h5" id="problem-heading">Problem Solver</h2>
     <div class="card-body">
-        <form id="solveForm" method="POST" action="/solve">
+        <form id="solveForm" method="POST" action="{{ url_for('solve') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
-                <label class="form-label">Enter Problem:</label>
-                <textarea name="problem" class="form-control" rows="4"
-                    placeholder="Describe your software engineering problem" {% if not session.model %}disabled{% endif
-                    %}></textarea>
+                <label class="form-label" for="language">Language</label>
+                <select class="form-select" name="language" id="language"
+                    {% if not session.get('model') %}disabled{% endif %}>
+                    {% for value, settings in languages.items() %}
+                    <option value="{{ value }}" {% if value == selected_language|default('python') %}selected{% endif %}>
+                        {{ settings.label }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
-            <button type="submit" class="btn btn-success" {% if not session.model %}disabled{% endif %}>
-                Solve Problem
-            </button>
+            <div class="mb-3">
+                <label class="form-label" for="problem">Enter problem:</label>
+                <textarea id="problem" name="problem" class="form-control" rows="5"
+                    required maxlength="20000" placeholder="Describe a small, self-contained programming problem"
+                    {% if not session.get('model') %}disabled{% endif %}>{{ problem|default('') }}</textarea>
+            </div>
+            {% if execution_enabled %}
+            <p class="text-danger">Automatic execution is enabled. Generated code will run on this server;
+                this is not a sandbox.</p>
+            {% else %}
+            <p class="text-secondary">Code and three suggested tests will be generated.
+                Automatic execution is disabled, so results are not verified.</p>
+            {% endif %}
+            <button type="submit" class="btn btn-success"
+                {% if not session.get('model') %}disabled{% endif %}>Solve Problem</button>
+            {% if not session.get('model') %}
+            <p class="mt-3 mb-0">Select and save a model to begin.</p>
+            {% endif %}
         </form>
     </div>
-</div>
+</section>
 
-<div id="loading" class="card mb-4" style="display: none;">
-    <div class="card-body">
-        <div class="d-flex align-items-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div class="ms-3">
-                <h5 class="mb-0">Processing Problem...</h5>
-                <p class="mb-0">Current step: <span id="step">Initializing</span></p>
-            </div>
-        </div>
-    </div>
+<div id="loading" class="alert alert-info" role="status" hidden>
+    Generating a solution and tests. This can take a few minutes; keep this page open.
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-    document.querySelectorAll('input[name="model_type"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            document.getElementById('modelForm').submit();
-        });
+    const solveForm = document.getElementById('solveForm');
+    solveForm.addEventListener('submit', () => {
+        document.getElementById('loading').hidden = false;
+        solveForm.querySelector('button[type="submit"]').disabled = true;
     });
-
-    document.getElementById('solveForm').addEventListener('submit', function (e) {
-        const loading = document.getElementById('loading');
-        const button = document.querySelector('#solveForm button[type="submit"]');
-
-        loading.style.display = 'block';
-        button.disabled = true;
-
-        const eventSource = new EventSource('/progress');
-
-        eventSource.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            document.getElementById('step').textContent = data.step;
-
-            if (data.complete) {
-                eventSource.close();
-                window.location.href = '/';  // Redirect to clear form
-            }
-        };
-
-        // Prevent double submission
-        e.preventDefault();
-        this.submit();
+    // Restore controls when returning through the browser back/forward cache.
+    window.addEventListener('pageshow', () => {
+        document.getElementById('loading').hidden = true;
+        solveForm.querySelector('button[type="submit"]').disabled =
+            document.getElementById('problem').disabled;
     });
 </script>
 {% endblock %}

@@ -14,3 +14,14 @@ venv/
 *.log
 *.gguf
 models/
+.venv/
+.pytest_cache/
+.ruff_cache/
+data/
+logs/
+*.db-*
+*.sqlite-*
+.env.*
+!.env.example
+htmlcov/
+.coverage

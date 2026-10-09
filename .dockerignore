@@ -9,3 +9,14 @@ __pycache__
 .DS_Store
 venv
 models/
+.venv/
+.pytest_cache/
+.ruff_cache/
+data/
+logs/
+*.db-*
+*.sqlite-*
+.env.*
+!.env.example
+tests/
+.github/

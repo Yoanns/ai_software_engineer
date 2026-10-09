@@ -1,55 +1,75 @@
-<!-- templates/results.html -->
 {% extends "base.html" %}
-
 {% block content %}
 <h1 class="mb-4">Solution Results</h1>
-
-<div class="card mb-4">
-    <div class="card-header">Solution Code</div>
-    <div class="card-body position-relative">
-        <button class="btn btn-sm btn-secondary copy-btn position-absolute" style="top: 10px; right: 10px;">Copy</button>
-        <pre><code class="language-python" id="code-block">{{ result.solution }}</code></pre>
-    </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-header {% if result.success %}bg-success{% else %}bg-danger{% endif %} text-white">
-        Verification Status
+{% if result.error %}
+<div class="alert alert-danger" role="alert">{{ result.error }}</div>
+{% endif %}
+{% if result.warning %}
+<div class="alert alert-warning" role="alert">{{ result.warning }}</div>
+{% endif %}
+{% if result.solution %}
+<section class="card mb-4" aria-labelledby="solution-heading">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0" id="solution-heading">Solution Code</h2>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="copy-code">Copy code</button>
     </div>
     <div class="card-body">
-        {% if result.success %}
-        <p class="text-success">All tests passed successfully!</p>
+        <pre><code id="code-block">{{ result.solution }}</code></pre>
+        <p id="copy-status" role="status" class="mb-0"></p>
+    </div>
+</section>
+{% endif %}
+
+{% set verification = result.verification_result %}
+<section class="card mb-4" aria-labelledby="verification-heading">
+    <h2 class="card-header h5" id="verification-heading">Verification Status</h2>
+    <div class="card-body">
+        {% if verification.status == 'not_run' %}
+        <p class="text-secondary">{{ verification.message }}</p>
+        {% elif result.success %}
+        <p class="text-success">All three generated tests passed.
+            This is not a guarantee of correctness; review the code and add your own tests.</p>
         {% else %}
-        <pre>{{ result.verification_result|tojson(indent=2) }}</pre>
+        <p class="text-danger">Verification failed or could not be completed.</p>
         {% endif %}
+        <pre class="diagnostics">{{ verification|tojson(indent=2) }}</pre>
     </div>
-</div>
+</section>
 
-<div class="card mb-4">
-    <div class="card-header">Reflections</div>
+{% if result.reflections %}
+<section class="card mb-4" aria-labelledby="reflection-heading">
+    <h2 class="card-header h5" id="reflection-heading">Reflections</h2>
     <div class="card-body">
-        <ul class="list-group">
+        <ul class="mb-0">
             {% for reflection in result.reflections %}
-            <li class="list-group-item">{{ reflection }}</li>
+            <li>{{ reflection }}</li>
             {% endfor %}
         </ul>
     </div>
-</div>
-
-<a href="/" class="btn btn-primary">Back to Problem Solver</a>
+</section>
+{% endif %}
+<a href="{{ url_for('index') }}" class="btn btn-primary">Back to Problem Solver</a>
 {% endblock %}
 
+{% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const copyBtn = document.querySelector('.copy-btn');
-        copyBtn.addEventListener('click', function () {
-            const codeText = document.getElementById('code-block').innerText;
-            navigator.clipboard.writeText(codeText).then(() => {
-                copyBtn.textContent = "Copied!";
-                setTimeout(() => copyBtn.textContent = "Copy", 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
+    const copyButton = document.getElementById('copy-code');
+    if (copyButton) {
+        copyButton.addEventListener('click', async () => {
+            const code = document.getElementById('code-block');
+            const status = document.getElementById('copy-status');
+            try {
+                await navigator.clipboard.writeText(code.textContent);
+                status.textContent = 'Code copied.';
+            } catch {
+                const range = document.createRange();
+                range.selectNodeContents(code);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                status.textContent = 'Code selected. Press Ctrl+C (or Cmd+C) to copy.';
+            }
         });
-    });
+    }
 </script>
+{% endblock %}
